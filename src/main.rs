@@ -2,7 +2,8 @@
 extern crate toml;
 
 use std::fmt::Debug;
-use std::{fs, path::Path};
+use std::io::Error;
+use std::{env, fs, path::Path};
 
 use toml::Value;
 use walkdir::WalkDir;
@@ -19,8 +20,18 @@ struct PackageInfo {
     dependencies: Vec<String>,
 }
 
-fn main() {
-    let paths: Vec<String> = WalkDir::new(".")
+fn main() -> Result<(), Error> {
+    let default_path = String::from(".");
+
+    let args: Vec<String> = env::args().collect();
+    let path_root = args.get(1).unwrap_or(&default_path);
+
+    if !Path::new(path_root).exists() {
+        println!("Root path not found");
+        std::process::exit(-1);
+    }
+
+    let paths: Vec<String> = WalkDir::new(path_root)
         .into_iter()
         .map(|w| w.unwrap().path().display().to_string())
         .collect();
@@ -60,5 +71,7 @@ fn main() {
     });
 
     debug!(toml_file_paths);
-    debug!(package_infos.collect::<Vec<_>>())
+    debug!(package_infos.collect::<Vec<_>>());
+
+    Ok(())
 }
