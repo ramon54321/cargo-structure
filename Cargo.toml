@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 toml = "0.4.2"
 walkdir = "2"
+dot-writer = "0.1.2"

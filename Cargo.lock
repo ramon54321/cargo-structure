@@ -6,9 +6,16 @@ version = 3
 name = "ProjectKnow"
 version = "0.1.0"
 dependencies = [
+ "dot-writer",
  "toml",
  "walkdir",
 ]
+
+[[package]]
+name = "dot-writer"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1defb949b123415131ecae40ab5dca70e9f39eedda3de2cebb03a8a98fdf5894"
 
 [[package]]
 name = "same-file"
