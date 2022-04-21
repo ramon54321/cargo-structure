@@ -3,16 +3,6 @@
 version = 3
 
 [[package]]
-name = "ProjectKnow"
-version = "0.1.0"
-dependencies = [
- "clap",
- "dot-writer",
- "toml",
- "walkdir",
-]
-
-[[package]]
 name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -34,6 +24,16 @@ name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
+
+[[package]]
+name = "cargo_structure"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "dot-writer",
+ "toml",
+ "walkdir",
+]
 
 [[package]]
 name = "clap"

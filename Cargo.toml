@@ -1,9 +1,12 @@
 [package]
-name = "ProjectKnow"
+name = "cargo-structure"
 version = "0.1.0"
+authors = ["Ramon Brand"]
+description = "A simple tool for analyzing the structure of a cargo project."
+keywords = ["architecture", "dependencies", "structure"]
+categories = ["command-line-utilities"]
+license = "MIT"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 toml = "0.4.2"
