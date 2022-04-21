@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Ramon Brand"]
 description = "A simple tool for analyzing the structure of a cargo project."
 keywords = ["architecture", "dependencies", "structure"]
-categories = ["command-line-utilities"]
+categories = ["command-line-utilities", "development-tools::cargo-plugins"]
 license = "MIT"
 edition = "2021"
 
