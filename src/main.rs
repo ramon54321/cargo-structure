@@ -1,9 +1,10 @@
 #[macro_use]
 extern crate toml;
 
+use clap::{App, Arg, ArgMatches};
 use std::fmt::Debug;
 use std::io::Error;
-use std::{env, fs, path::Path};
+use std::{fs, path::Path};
 
 use toml::Value;
 use walkdir::WalkDir;
@@ -21,12 +22,9 @@ struct PackageInfo {
 }
 
 fn main() -> Result<(), Error> {
-    let path_root = get_path_root();
-    let paths: Vec<String> = WalkDir::new(path_root)
-        .into_iter()
-        .map(|w| w.unwrap().path().display().to_string())
-        .collect();
-
+    let arguments = get_arguments();
+    let path_root = get_path_root(&arguments);
+    let paths = get_paths(&arguments, &path_root);
     let toml_file_paths: Vec<String> = paths
         .iter()
         .filter(|path| path.ends_with(".toml"))
@@ -43,6 +41,101 @@ fn main() -> Result<(), Error> {
         .filter_map(|t| toml::from_str::<Value>(t.as_str()).ok())
         .collect();
 
+    let package_infos = get_package_infos(&arguments, &parsed_tomls);
+    let dot_string = get_dot_string_from_package_infos(&package_infos);
+
+    debug!(dot_string);
+    debug!(toml_file_paths);
+    debug!(package_infos);
+
+    Ok(())
+}
+
+fn get_arguments() -> ArgMatches {
+    App::new("My Program")
+        .version("1.0")
+        .arg(
+            Arg::new("root")
+                .value_name("ROOT PACKAGE")
+                .long_help("The path to the root package. This path contains the parent Cargo.toml."),
+        )
+        .arg(
+            Arg::new("ignore")
+                .short('i')
+                .long("ignore")
+                .value_name("PACKAGES")
+                .multiple_values(true)
+                .takes_value(true)
+                .long_help("Multiple optional package names which will be ignored.")
+        )
+        .arg(
+            Arg::new("ignore-paths")
+                .short('I')
+                .long("ignore-paths")
+                .value_name("FUZZY QUERY")
+                .multiple_values(true)
+                .takes_value(true)
+                .long_help("Multiple optional strings which will be used to filter out paths of child packages.")
+        )
+        .get_matches()
+}
+
+fn get_path_root(arguments: &ArgMatches) -> String {
+    let default_path = String::from(".");
+    let path_root = arguments
+        .value_of("root")
+        .unwrap_or(&default_path)
+        .to_string();
+    if !Path::new(&path_root).exists() {
+        println!("Root path does not exist: {}", path_root);
+        std::process::exit(-1);
+    }
+    path_root
+}
+
+fn get_paths(arguments: &ArgMatches, path_root: &String) -> Vec<String> {
+    let paths: Vec<String> = WalkDir::new(path_root)
+        .into_iter()
+        .map(|w| w.unwrap().path().display().to_string())
+        .collect();
+
+    let paths = if !arguments.is_present("ignore-paths") {
+        paths
+    } else {
+        let fuzzy_ignores: Vec<&str> = arguments.values_of("ignore-paths").unwrap().collect();
+        paths
+            .into_iter()
+            .filter(|path| {
+                !fuzzy_ignores
+                    .iter()
+                    .any(|fuzzy_ignore| path.contains(fuzzy_ignore))
+            })
+            .collect()
+    };
+
+    paths
+}
+
+fn get_dot_string_from_package_infos(package_infos: &Vec<PackageInfo>) -> String {
+    let mut dot_bytes = Vec::new();
+    {
+        let mut writer = dot_writer::DotWriter::from(&mut dot_bytes);
+        writer.set_pretty_print(false);
+        let mut graph = writer.digraph();
+        package_infos.iter().for_each(|package_info| {
+            package_info.dependencies.iter().for_each(|dependency| {
+                graph.edge(package_info.name.clone(), dependency);
+            })
+        });
+    }
+    let dot_string = String::from_utf8(dot_bytes);
+    match dot_string {
+        Ok(_dot_string) => _dot_string,
+        _ => std::process::exit(-2),
+    }
+}
+
+fn get_package_infos(arguments: &ArgMatches, parsed_tomls: &Vec<Value>) -> Vec<PackageInfo> {
     let package_infos: Vec<PackageInfo> = parsed_tomls
         .iter()
         .filter_map(|cargo| {
@@ -64,41 +157,27 @@ fn main() -> Result<(), Error> {
         })
         .collect();
 
-    let dot_string = get_dot_string_from_package_infos(&package_infos);
-
-    debug!(dot_string);
-    debug!(toml_file_paths);
-    debug!(package_infos);
-
-    Ok(())
-}
-
-fn get_path_root() -> String {
-    let default_path = String::from(".");
-    let args: Vec<String> = env::args().collect();
-    let path_root = args.get(1).unwrap_or(&default_path);
-    if !Path::new(path_root).exists() {
-        println!("Root path not found");
-        std::process::exit(-1);
-    }
-    path_root.clone()
-}
-
-fn get_dot_string_from_package_infos(package_infos: &Vec<PackageInfo>) -> String {
-    let mut dot_bytes = Vec::new();
-    {
-        let mut writer = dot_writer::DotWriter::from(&mut dot_bytes);
-        writer.set_pretty_print(false);
-        let mut graph = writer.digraph();
-        package_infos.iter().for_each(|package_info| {
-            package_info.dependencies.iter().for_each(|dependency| {
-                graph.edge(package_info.name.clone(), dependency);
+    let package_infos = if !arguments.is_present("ignore") {
+        package_infos
+    } else {
+        let ignores: Vec<String> = arguments
+            .values_of("ignore")
+            .unwrap()
+            .map(|s| s.to_string())
+            .collect();
+        package_infos
+            .into_iter()
+            .filter(|package_info| !ignores.contains(&package_info.name))
+            .map(|package_info| PackageInfo {
+                dependencies: package_info
+                    .dependencies
+                    .into_iter()
+                    .filter(|dependency| !ignores.contains(dependency))
+                    .collect(),
+                ..package_info
             })
-        });
-    }
-    let dot_string = String::from_utf8(dot_bytes);
-    match dot_string {
-        Ok(_dot_string) => _dot_string,
-        _ => std::process::exit(-2),
-    }
+            .collect()
+    };
+
+    package_infos
 }
