@@ -1,14 +1,11 @@
-#[macro_use]
-extern crate toml;
-
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 use std::fmt::Debug;
 use std::io::Error;
 use std::{fs, path::Path};
-
 use toml::Value;
 use walkdir::WalkDir;
 
+#[allow(unused_macros)]
 macro_rules! debug {
     ($e:expr) => {
         println!("{:?}", $e)
@@ -50,7 +47,7 @@ fn main() -> Result<(), Error> {
 }
 
 fn get_arguments() -> ArgMatches {
-    App::new("Cargo Structure")
+    Command::new("Cargo Structure")
         .version("0.1.0")
         .author("Ramon Brand")
         .about("A utility for analyzing the structure of a cargo project.")
