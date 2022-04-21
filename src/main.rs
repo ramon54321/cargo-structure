@@ -44,9 +44,7 @@ fn main() -> Result<(), Error> {
     let package_infos = get_package_infos(&arguments, &parsed_tomls);
     let dot_string = get_dot_string_from_package_infos(&package_infos);
 
-    debug!(dot_string);
-    debug!(toml_file_paths);
-    debug!(package_infos);
+    println!("{}", dot_string);
 
     Ok(())
 }
