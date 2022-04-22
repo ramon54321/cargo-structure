@@ -115,27 +115,6 @@ fn get_paths(arguments: &ArgMatches, path_root: &String) -> Vec<String> {
     paths
 }
 
-fn get_dot_string_from_package_infos(package_infos: &Vec<PackageInfo>) -> String {
-    let mut dot_bytes = Vec::new();
-    {
-        let mut writer = dot_writer::DotWriter::from(&mut dot_bytes);
-        writer.set_pretty_print(false);
-        let mut graph = writer.digraph();
-        package_infos.iter().for_each(|package_info| {
-            package_info.dependencies.iter().for_each(|dependency| {
-                let name = format!("\"{}\"", package_info.name.clone());
-                let dependency = format!("\"{}\"", dependency);
-                graph.edge(name, dependency);
-            })
-        });
-    }
-    let dot_string = String::from_utf8(dot_bytes);
-    match dot_string {
-        Ok(_dot_string) => _dot_string,
-        _ => std::process::exit(-2),
-    }
-}
-
 fn get_package_infos(arguments: &ArgMatches, parsed_tomls: &Vec<Value>) -> Vec<PackageInfo> {
     let package_infos: Vec<PackageInfo> = parsed_tomls
         .iter()
@@ -181,4 +160,25 @@ fn get_package_infos(arguments: &ArgMatches, parsed_tomls: &Vec<Value>) -> Vec<P
     };
 
     package_infos
+}
+
+fn get_dot_string_from_package_infos(package_infos: &Vec<PackageInfo>) -> String {
+    let mut dot_bytes = Vec::new();
+    {
+        let mut writer = dot_writer::DotWriter::from(&mut dot_bytes);
+        writer.set_pretty_print(false);
+        let mut graph = writer.digraph();
+        package_infos.iter().for_each(|package_info| {
+            package_info.dependencies.iter().for_each(|dependency| {
+                let name = format!("\"{}\"", package_info.name.clone());
+                let dependency = format!("\"{}\"", dependency);
+                graph.edge(name, dependency);
+            })
+        });
+    }
+    let dot_string = String::from_utf8(dot_bytes);
+    match dot_string {
+        Ok(_dot_string) => _dot_string,
+        _ => std::process::exit(-2),
+    }
 }
