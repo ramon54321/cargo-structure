@@ -1,5 +1,5 @@
 use clap::{Arg, ArgMatches, Command};
-use std::fmt::Debug;
+use std::fmt::{format, Debug};
 use std::io::Error;
 use std::{fs, path::Path};
 use toml::Value;
@@ -123,7 +123,9 @@ fn get_dot_string_from_package_infos(package_infos: &Vec<PackageInfo>) -> String
         let mut graph = writer.digraph();
         package_infos.iter().for_each(|package_info| {
             package_info.dependencies.iter().for_each(|dependency| {
-                graph.edge(package_info.name.clone(), dependency);
+                let name = format!("\"{}\"", package_info.name.clone());
+                let dependency = format!("\"{}\"", dependency);
+                graph.edge(name, dependency);
             })
         });
     }
