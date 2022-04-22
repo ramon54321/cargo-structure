@@ -5,6 +5,10 @@
 
 Cargo structure searches for all `Cargo.toml` files in your project, outputting a dot graph of the dependencies which can be fed into a renderer such as graphviz.
 
+### Example
+
+![ExampleDotGraph](unknown)
+
 ### Installation
 
 ```
@@ -29,6 +33,18 @@ If you have subcrates in your crate, they can be filtered out with a fuzzy searc
 
 ```
 cargo structure --ignore-paths my_local_subcrate
+```
+
+The output is most useful when piped to a graphviz command such as `dot`. You can generate a dot graph, assuming you have graphviz installed, by running the following.
+
+```
+cargo structure | dot -Tsvg > structure.svg
+```
+
+Commonly you would want to ignore certain directories, since by default the tool produces a single monolithic output for the entire subtree of packages beneath the root path.
+
+```
+cargo structure . --ignore-paths target | dot -Tsvg > structure.svg
 ```
 
 ### Contributions
