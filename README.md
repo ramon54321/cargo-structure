@@ -28,7 +28,7 @@ cargo structure --ignore clap toml
 If you have subcrates in your crate, they can be filtered out with a fuzzy search over their relative file path.
 
 ```
-cargo strucutre --ignore-paths my_local_subcrate
+cargo structure --ignore-paths my_local_subcrate
 ```
 
 ### Contributions
