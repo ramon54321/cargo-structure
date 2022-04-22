@@ -47,6 +47,13 @@ Commonly you would want to ignore certain directories, since by default the tool
 cargo structure . --ignore-paths target | dot -Tsvg > structure.svg
 ```
 
+### Roadmap
+
+ - Specific root toml traversal instead of recursive monolithic subtree search.
+ - Local path dependencies only.
+ - Unique styling of edges depending on dependency type.
+ - Default to root toml traversal.
+
 ### Contributions
 
 Contributions are always welcome! Simply fork the repo and submit a pull request.
