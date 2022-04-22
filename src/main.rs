@@ -1,5 +1,5 @@
 use clap::{Arg, ArgMatches, Command};
-use std::fmt::{format, Debug};
+use std::fmt::Debug;
 use std::io::Error;
 use std::{fs, path::Path};
 use toml::Value;
