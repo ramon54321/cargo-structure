@@ -5,6 +5,8 @@ authors = ["Ramon Brand"]
 description = "A simple tool for analyzing the structure of a cargo project."
 keywords = ["architecture", "dependencies", "structure"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins"]
+repository = "https://github.com/ramon54321/cargo-structure"
+readme = "README.md"
 license = "MIT"
 edition = "2021"
 
