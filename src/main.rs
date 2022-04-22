@@ -48,7 +48,7 @@ fn main() -> Result<(), Error> {
 
 fn get_arguments() -> ArgMatches {
     Command::new("Cargo Structure")
-        .version("0.1.0")
+        .version("0.1.1")
         .author("Ramon Brand")
         .about("A utility for analyzing the structure of a cargo project.")
         .no_binary_name(false)
