@@ -55,7 +55,7 @@ fn get_arguments() -> ArgMatches {
         .arg(Arg::new("structure").hide(true))
         .arg(
             Arg::new("root")
-                .value_name("ROOT PACKAGE")
+                .value_name("ROOT PACKAGE PATH")
                 .long_help("The path to the root package. This path contains the parent Cargo.toml."),
         )
         .arg(
