@@ -7,7 +7,7 @@ Cargo structure searches for all `Cargo.toml` files in your project, outputting 
 
 ### Example
 
-![ExampleDotGraph](unknown)
+![ExampleDotGraph](https://raw.githubusercontent.com/ramon54321/cargo-structure/main/docs/structure.svg)
 
 ### Installation
 
