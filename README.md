@@ -17,7 +17,9 @@ cargo install cargo-structure
 
 ### Usage
 
-Run cargo structure as a cargo plugin. The root package does not need to be speficied and will default to `.`, the current directory.
+Run cargo structure as a cargo plugin. The root package does not need to be specified and will default to `.`, the current directory.
+
+Cargo Structure will traverse all local subcrates which are defined with the `path = ...` property in the respective `Cargo.toml`. This is very useful when graphing a general architecture diagram, essentially showing how all local subcrates are dependent on one another.
 
 ```
 cargo structure <ROOT PACKAGE PATH>
@@ -29,7 +31,13 @@ Specific dependencies can also be ignored with the `--ignore` option.
 cargo structure --ignore clap toml
 ```
 
-If you have subcrates in your crate, they can be filtered out with a fuzzy search over their relative file path.
+The entire tree can also be traversed to generate a graph of all dependencies in all subcrates even if they are not in the same crate. This can be done with the `--monolithic` flag.
+
+```
+cargo structure --monolithic
+```
+
+If you have subcrates in your crate, they can be filtered out with a fuzzy search over their relative file path. This only works with monolithic search.
 
 ```
 cargo structure --ignore-paths my_local_subcrate
@@ -49,10 +57,10 @@ cargo structure . --ignore-paths target | dot -Tsvg > structure.svg
 
 ### Roadmap
 
- - Specific root toml traversal instead of recursive monolithic subtree search.
- - Local path dependencies only.
- - Unique styling of edges depending on dependency type.
- - Default to root toml traversal.
+ - [x] Specific root toml traversal instead of recursive monolithic subtree search.
+ - [x] Default to root toml traversal.
+ - [ ] Local path dependencies only.
+ - [ ] Unique styling of edges depending on dependency type.
 
 ### Contributions
 

@@ -1,6 +1,5 @@
 use clap::{Arg, ArgMatches, Command};
 use std::fmt::Debug;
-use std::io::Error;
 use std::{fs, path::Path};
 use toml::Value;
 use walkdir::WalkDir;
@@ -18,32 +17,102 @@ struct PackageInfo {
     dependencies: Vec<String>,
 }
 
-fn main() -> Result<(), Error> {
+fn main() -> Result<(), i32> {
     let arguments = get_arguments();
     let path_root = get_path_root(&arguments);
-    let paths = get_paths(&arguments, &path_root);
-    let toml_file_paths: Vec<String> = paths
-        .iter()
-        .filter(|path| path.ends_with(".toml"))
-        .cloned()
-        .collect();
 
-    let string_tomls: Vec<String> = toml_file_paths
-        .iter()
-        .filter_map(|p| fs::read_to_string(p).ok())
-        .collect();
+    let applicable_tomls: Vec<Value> = if arguments.is_present("monolithic") {
+        get_parsed_tomls_monolithic(&arguments, &path_root)
+    } else {
+        get_parsed_tomls_recursive(&path_root)
+    }
+    .ok_or(-1)?;
 
-    let parsed_tomls: Vec<Value> = string_tomls
-        .iter()
-        .filter_map(|t| toml::from_str::<Value>(t.as_str()).ok())
-        .collect();
+    if applicable_tomls.is_empty() {
+        println!("No Cargo.toml found in {}", path_root);
+        std::process::exit(-1);
+    }
 
-    let package_infos = get_package_infos(&arguments, &parsed_tomls);
+    let package_infos = get_package_infos(&arguments, &applicable_tomls);
     let dot_string = get_dot_string_from_package_infos(&package_infos);
 
     println!("{}", dot_string);
 
     Ok(())
+}
+
+fn get_parsed_toml_at_path(path_root: &String) -> Option<Value> {
+    let paths: Vec<String> = fs::read_dir(path_root)
+        .ok()?
+        .filter_map(|directory| Some(directory.ok()?.path().display().to_string()))
+        .collect();
+    let parsed_tomls: Vec<Value> = paths
+        .into_iter()
+        .filter(|path| path.ends_with(".toml"))
+        .filter_map(|p| fs::read_to_string(p).ok())
+        .filter_map(|t| toml::from_str::<Value>(t.as_str()).ok())
+        .collect();
+    Some(parsed_tomls.first()?.clone())
+}
+
+fn get_parsed_tomls_recursive(path_root: &String) -> Option<Vec<Value>> {
+    let parsed_toml = get_parsed_toml_at_path(&path_root).unwrap();
+    let dependencies = get_parsed_toml_dependencies(&parsed_toml)?;
+    let local_dependency_relative_paths: Vec<String> = dependencies
+        .iter()
+        .filter_map(|(_, value)| Some(value.get("path")?.as_str()?.to_string()))
+        .collect();
+    let child_toml_paths: Vec<String> = local_dependency_relative_paths
+        .iter()
+        .map(|relative_path| Path::new(path_root).join(relative_path))
+        .map(|path| path.display().to_string())
+        .collect();
+    let parsed_toml = vec![parsed_toml];
+    if child_toml_paths.is_empty() {
+        Some(parsed_toml)
+    } else {
+        let child_parsed_tomls: Vec<Value> = child_toml_paths
+            .iter()
+            .filter_map(get_parsed_tomls_recursive)
+            .flatten()
+            .collect();
+        let all_parsed_tomls = parsed_toml
+            .iter()
+            .cloned()
+            .chain(child_parsed_tomls.iter().cloned())
+            .collect();
+        Some(all_parsed_tomls)
+    }
+}
+
+fn get_parsed_toml_dependencies(parsed_toml: &Value) -> Option<Vec<(String, Value)>> {
+    Some(
+        parsed_toml
+            .get("dependencies")?
+            .as_table()?
+            .iter()
+            .map(|(key, value)| (key.to_owned(), value.to_owned()))
+            .collect::<Vec<(String, Value)>>()
+            .to_owned(),
+    )
+}
+
+fn get_parsed_tomls_monolithic(arguments: &ArgMatches, path_root: &String) -> Option<Vec<Value>> {
+    let paths = get_paths_to_all_non_ignored_sub_files(&arguments, &path_root);
+    let toml_file_paths: Vec<String> = paths
+        .iter()
+        .filter(|path| path.ends_with(".toml"))
+        .cloned()
+        .collect();
+    let string_tomls: Vec<String> = toml_file_paths
+        .iter()
+        .filter_map(|p| fs::read_to_string(p).ok())
+        .collect();
+    let parsed_tomls: Vec<Value> = string_tomls
+        .iter()
+        .filter_map(|t| toml::from_str::<Value>(t.as_str()).ok())
+        .collect();
+    Some(parsed_tomls)
 }
 
 fn get_arguments() -> ArgMatches {
@@ -57,6 +126,12 @@ fn get_arguments() -> ArgMatches {
             Arg::new("root")
                 .value_name("ROOT PACKAGE PATH")
                 .long_help("The path to the root package. This path contains the parent Cargo.toml."),
+        )
+        .arg(
+            Arg::new("monolithic")
+                .short('m')
+                .long("monolithic")
+                .long_help("Treat all child Cargo.toml files as part of the same dependency graph.")
         )
         .arg(
             Arg::new("ignore")
@@ -74,6 +149,7 @@ fn get_arguments() -> ArgMatches {
                 .value_name("FUZZY QUERY")
                 .multiple_values(true)
                 .takes_value(true)
+                .requires("monolithic")
                 .long_help("Multiple optional strings which will be used to filter out paths of child packages.")
         )
         .get_matches()
@@ -92,12 +168,14 @@ fn get_path_root(arguments: &ArgMatches) -> String {
     path_root
 }
 
-fn get_paths(arguments: &ArgMatches, path_root: &String) -> Vec<String> {
+fn get_paths_to_all_non_ignored_sub_files(
+    arguments: &ArgMatches,
+    path_root: &String,
+) -> Vec<String> {
     let paths: Vec<String> = WalkDir::new(path_root)
         .into_iter()
         .map(|w| w.unwrap().path().display().to_string())
         .collect();
-
     let paths = if !arguments.is_present("ignore-paths") {
         paths
     } else {
@@ -111,7 +189,6 @@ fn get_paths(arguments: &ArgMatches, path_root: &String) -> Vec<String> {
             })
             .collect()
     };
-
     paths
 }
 
