@@ -117,7 +117,7 @@ fn get_parsed_tomls_monolithic(arguments: &ArgMatches, path_root: &String) -> Op
 
 fn get_arguments() -> ArgMatches {
     Command::new("Cargo Structure")
-        .version("0.1.1")
+        .version("0.2.0")
         .author("Ramon Brand")
         .about("A utility for analyzing the structure of a cargo project.")
         .no_binary_name(false)
