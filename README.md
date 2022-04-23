@@ -25,6 +25,12 @@ Cargo Structure will traverse all local subcrates which are defined with the `pa
 cargo structure <ROOT PACKAGE PATH>
 ```
 
+You can show the graph of only the local subcrates, which is useful when you want to ignore external dependency clutter and focus on the structure of your local project.
+
+```
+cargo structure --local
+```
+
 Specific dependencies can also be ignored with the `--ignore` option.
 
 ```
@@ -59,7 +65,7 @@ cargo structure . --ignore-paths target | dot -Tsvg > structure.svg
 
  - [x] Specific root toml traversal instead of recursive monolithic subtree search.
  - [x] Default to root toml traversal.
- - [ ] Local path dependencies only.
+ - [x] Local path dependencies only.
  - [ ] Unique styling of edges depending on dependency type.
 
 ### Contributions

@@ -24,7 +24,7 @@ fn main() -> Result<(), i32> {
     let applicable_tomls: Vec<Value> = if arguments.is_present("monolithic") {
         get_parsed_tomls_monolithic(&arguments, &path_root)
     } else {
-        get_parsed_tomls_recursive(&path_root)
+        get_parsed_tomls_recursive(&arguments, &path_root)
     }
     .ok_or(-1)?;
 
@@ -55,7 +55,7 @@ fn get_parsed_toml_at_path(path_root: &String) -> Option<Value> {
     Some(parsed_tomls.first()?.clone())
 }
 
-fn get_parsed_tomls_recursive(path_root: &String) -> Option<Vec<Value>> {
+fn get_parsed_tomls_recursive(arguments: &ArgMatches, path_root: &String) -> Option<Vec<Value>> {
     let parsed_toml = get_parsed_toml_at_path(&path_root).unwrap();
     let dependencies = get_parsed_toml_dependencies(&parsed_toml)?;
     let local_dependency_relative_paths: Vec<String> = dependencies
@@ -73,7 +73,7 @@ fn get_parsed_tomls_recursive(path_root: &String) -> Option<Vec<Value>> {
     } else {
         let child_parsed_tomls: Vec<Value> = child_toml_paths
             .iter()
-            .filter_map(get_parsed_tomls_recursive)
+            .filter_map(|child_path| get_parsed_tomls_recursive(arguments, child_path))
             .flatten()
             .collect();
         let all_parsed_tomls = parsed_toml
@@ -132,6 +132,12 @@ fn get_arguments() -> ArgMatches {
                 .short('m')
                 .long("monolithic")
                 .long_help("Treat all child Cargo.toml files as part of the same dependency graph.")
+        )
+        .arg(
+            Arg::new("local")
+                .short('l')
+                .long("local")
+                .long_help("Include only local subcrates.")
         )
         .arg(
             Arg::new("ignore")
@@ -213,10 +219,27 @@ fn get_package_infos(arguments: &ArgMatches, parsed_tomls: &Vec<Value>) -> Vec<P
             }
         })
         .collect();
-
-    let package_infos = if !arguments.is_present("ignore") {
+    let package_infos = if arguments.is_present("local") {
+        let local_package_names: Vec<String> = parsed_tomls
+            .iter()
+            .filter_map(|toml| Some(toml.get("package")?.get("name")?.as_str()?.to_string()))
+            .collect();
         package_infos
+            .into_iter()
+            .filter(|package_info| local_package_names.contains(&package_info.name))
+            .map(|package_info| PackageInfo {
+                dependencies: package_info
+                    .dependencies
+                    .into_iter()
+                    .filter(|dependency| local_package_names.contains(dependency))
+                    .collect(),
+                ..package_info
+            })
+            .collect()
     } else {
+        package_infos
+    };
+    let package_infos = if arguments.is_present("ignore") {
         let ignores: Vec<String> = arguments
             .values_of("ignore")
             .unwrap()
@@ -234,8 +257,9 @@ fn get_package_infos(arguments: &ArgMatches, parsed_tomls: &Vec<Value>) -> Vec<P
                 ..package_info
             })
             .collect()
+    } else {
+        package_infos
     };
-
     package_infos
 }
 
