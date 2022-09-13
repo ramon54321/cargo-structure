@@ -1,3 +1,7 @@
+<div align="center">
+  <span><img src="./docs/structure_logo.svg" width="50%"></span>
+</div>
+
 ## Cargo Structure
 
 [![Crates.io](https://img.shields.io/crates/v/cargo-structure?style=for-the-badge)](https://crates.io/crates/cargo-structure)
