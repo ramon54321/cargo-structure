@@ -1,4 +1,5 @@
 use clap::{Arg, ArgMatches, Command};
+use std::collections::HashSet;
 use std::fmt::Debug;
 use std::{fs, path::Path};
 use toml::Value;
@@ -300,12 +301,17 @@ fn get_dot_string_from_package_infos(package_infos: &Vec<PackageInfo>) -> String
     {
         let mut writer = dot_writer::DotWriter::from(&mut dot_bytes);
         writer.set_pretty_print(false);
+        let mut edges = HashSet::new();
         let mut graph = writer.digraph();
         package_infos.iter().for_each(|package_info| {
             package_info.dependencies.iter().for_each(|dependency| {
                 let name = format!("\"{}\"", package_info.name.clone());
                 let dependency = format!("\"{}\"", dependency);
-                graph.edge(name, dependency);
+                let edge_tuple = (name.clone(), dependency.clone());
+                if !edges.contains(&edge_tuple) {
+                    edges.insert(edge_tuple);
+                    graph.edge(name, dependency);
+                }
             })
         });
     }
