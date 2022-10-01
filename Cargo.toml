@@ -1,6 +1,6 @@
 [package]
 name = "cargo-structure"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Ramon Brand"]
 description = "A simple tool for analyzing the structure of a cargo project."
 keywords = ["architecture", "dependencies", "structure"]
