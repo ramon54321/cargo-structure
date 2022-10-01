@@ -57,12 +57,33 @@ fn get_parsed_toml_at_path(path_root: &String) -> Option<Value> {
 
 fn get_parsed_tomls_recursive(arguments: &ArgMatches, path_root: &String) -> Option<Vec<Value>> {
     let parsed_toml = get_parsed_toml_at_path(&path_root).unwrap();
-    let dependencies = get_parsed_toml_dependencies(&parsed_toml)?;
+    let members = get_parsed_toml_workspace_members(&parsed_toml);
+    let dependencies = get_parsed_toml_dependencies(&parsed_toml);
+    let members = if members.is_some() {
+        members.unwrap()
+    } else {
+        Vec::new()
+    };
+    let dependencies = if dependencies.is_some() {
+        dependencies.unwrap()
+    } else {
+        Vec::new()
+    };
+    let member_paths: Vec<String> = members
+        .iter()
+        .filter_map(|value| Some(value.as_str()?.to_string()))
+        .collect();
     let local_dependency_relative_paths: Vec<String> = dependencies
         .iter()
         .filter_map(|(_, value)| Some(value.get("path")?.as_str()?.to_string()))
         .collect();
-    let child_toml_paths: Vec<String> = local_dependency_relative_paths
+    let all_paths = {
+        let mut paths = member_paths.clone();
+        let mut paths_deps = local_dependency_relative_paths.clone();
+        paths.append(&mut paths_deps);
+        paths
+    };
+    let child_toml_paths: Vec<String> = all_paths
         .iter()
         .map(|relative_path| Path::new(path_root).join(relative_path))
         .map(|path| path.display().to_string())
@@ -83,6 +104,17 @@ fn get_parsed_tomls_recursive(arguments: &ArgMatches, path_root: &String) -> Opt
             .collect();
         Some(all_parsed_tomls)
     }
+}
+
+fn get_parsed_toml_workspace_members(parsed_toml: &Value) -> Option<Vec<Value>> {
+    Some(
+        parsed_toml
+            .get("workspace")?
+            .as_table()?
+            .get("members")?
+            .as_array()?
+            .to_owned(),
+    )
 }
 
 fn get_parsed_toml_dependencies(parsed_toml: &Value) -> Option<Vec<(String, Value)>> {
