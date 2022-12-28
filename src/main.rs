@@ -57,7 +57,8 @@ fn get_parsed_toml_at_path(path_root: &String) -> Option<Value> {
 }
 
 fn get_parsed_tomls_recursive(arguments: &ArgMatches, path_root: &String) -> Option<Vec<Value>> {
-    let parsed_toml = get_parsed_toml_at_path(&path_root).unwrap();
+    let parsed_toml = get_parsed_toml_at_path(&path_root)
+        .expect(&format!("Unable to get parsed toml at path {}", &path_root));
     let members = get_parsed_toml_workspace_members(&parsed_toml);
     let dependencies = get_parsed_toml_dependencies(&parsed_toml);
     let members = if members.is_some() {
@@ -150,7 +151,7 @@ fn get_parsed_tomls_monolithic(arguments: &ArgMatches, path_root: &String) -> Op
 
 fn get_arguments() -> ArgMatches {
     Command::new("Cargo Structure")
-        .version("0.2.0")
+        .version("0.4.1")
         .author("Ramon Brand")
         .about("A utility for analyzing the structure of a cargo project.")
         .no_binary_name(false)
